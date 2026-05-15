@@ -8,6 +8,7 @@ import { StatusBadge } from '@/components/bookings/StatusBadge'
 import { BoatStatusBadge } from '@/components/fleet/BoatStatusBadge'
 import { BookingActions } from '@/components/bookings/BookingActions'
 import { PaymentSection } from '@/components/bookings/PaymentSection'
+import { WaiverSection } from '@/components/bookings/WaiverSection'
 import { formatCurrency, formatDateRange } from '@/lib/utils'
 import type { BookingWithRelations } from '@/types/database'
 
@@ -179,29 +180,18 @@ export default async function BookingDetailPage({ params }: PageProps) {
               </Card>
             )}
 
-            {/* Waiver status */}
+            {/* Waiver */}
             <Card className="border border-slate-200 shadow-sm">
               <CardHeader className="pb-3 pt-4 px-5">
                 <CardTitle className="text-sm font-semibold text-slate-900">Waiver</CardTitle>
               </CardHeader>
               <CardContent className="px-5 pb-5">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={[
-                      'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                      booking.waiver_signed
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-amber-100 text-amber-800',
-                    ].join(' ')}
-                  >
-                    {booking.waiver_signed ? 'Signed' : 'Unsigned'}
-                  </span>
-                  {booking.waiver_signed_at && (
-                    <span className="text-xs text-slate-400">
-                      {new Date(booking.waiver_signed_at).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
+                <WaiverSection
+                  bookingId={booking.id}
+                  waiverSigned={booking.waiver_signed}
+                  waiverSignedAt={booking.waiver_signed_at}
+                  waiverId={booking.waiver_id}
+                />
               </CardContent>
             </Card>
 

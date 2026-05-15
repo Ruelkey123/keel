@@ -109,6 +109,21 @@ export async function PATCH(
 
       updates.status = newStatus
 
+      // pending → confirmed: send confirmation email
+      if (newStatus === 'confirmed') {
+        // Fire-and-forget — don't block the response
+        fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/notifications/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.INTERNAL_API_SECRET}`,
+          },
+          body: JSON.stringify({ type: 'confirmation', booking_id: id }),
+        }).catch(() => {
+          // Non-critical — log but don't fail the booking update
+        })
+      }
+
       // confirmed → checked_out: create checkin record + set boat to rented
       if (newStatus === 'checked_out') {
         const { data: checkin, error: checkinError } = await supabase
