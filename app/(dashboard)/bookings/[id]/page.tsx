@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatusBadge } from '@/components/bookings/StatusBadge'
 import { BoatStatusBadge } from '@/components/fleet/BoatStatusBadge'
 import { BookingActions } from '@/components/bookings/BookingActions'
+import { PaymentSection } from '@/components/bookings/PaymentSection'
 import { formatCurrency, formatDateRange } from '@/lib/utils'
 import type { BookingWithRelations } from '@/types/database'
 
@@ -204,13 +205,18 @@ export default async function BookingDetailPage({ params }: PageProps) {
               </CardContent>
             </Card>
 
-            {/* Payment — Phase 7 placeholder */}
-            <Card className="border border-slate-200 shadow-sm">
+            {/* Payment */}
+            <Card className="border border-slate-200 shadow-sm md:col-span-2">
               <CardHeader className="pb-3 pt-4 px-5">
                 <CardTitle className="text-sm font-semibold text-slate-900">Payment</CardTitle>
               </CardHeader>
               <CardContent className="px-5 pb-5">
-                <p className="text-sm text-slate-400">Payment processing available in Phase 7.</p>
+                <PaymentSection
+                  bookingId={booking.id}
+                  bookingStatus={booking.status}
+                  depositAmount={booking.deposit_amount}
+                  totalPrice={booking.total_price}
+                />
               </CardContent>
             </Card>
           </div>
