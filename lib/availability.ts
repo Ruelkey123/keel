@@ -1,5 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 
+// Pure overlap check for testing — no DB dependency
+export function hasOverlap(
+  existingStart: Date,
+  existingEnd: Date,
+  newStart: Date,
+  newEnd: Date
+): boolean {
+  return newStart < existingEnd && newEnd > existingStart
+}
+
 export async function checkConflict(
   boatId: string,
   start: Date,
