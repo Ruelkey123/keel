@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileNav } from '@/components/layout/MobileNav'
@@ -8,23 +7,24 @@ import { ThemeProvider } from '@/components/shared/ThemeProvider'
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect('/login')
+  // Proxy (proxy.ts) handles unauthenticated redirects — no redirect here to avoid loops
+  let userName = user?.email ?? 'User'
+  let userEmail = user?.email ?? ''
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('full_name, email')
+      .eq('id', user.id)
+      .single()
+
+    if (profile) {
+      userName = profile.full_name
+      userEmail = profile.email
+    }
   }
-
-  // Fetch user record with org info
-  const { data: userRecord } = await supabase
-    .from('users')
-    .select('full_name, email, org_id')
-    .eq('id', user.id)
-    .single()
-
-  const userName = userRecord?.full_name ?? user.email ?? 'User'
-  const userEmail = userRecord?.email ?? user.email ?? ''
 
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
