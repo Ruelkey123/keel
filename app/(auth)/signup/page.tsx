@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -31,6 +32,15 @@ export default function SignupPage() {
 
     if (!res.ok) {
       setError(data.error ?? 'Something went wrong. Please try again.')
+      setLoading(false)
+      return
+    }
+
+    // Sign in to establish session cookies
+    const supabase = createClient()
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+    if (signInError) {
+      setError(signInError.message)
       setLoading(false)
       return
     }
