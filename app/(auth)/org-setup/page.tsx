@@ -43,6 +43,7 @@ export default function OrgSetupPage() {
       return
     }
 
+    router.refresh()
     router.push('/dashboard')
   }
 
