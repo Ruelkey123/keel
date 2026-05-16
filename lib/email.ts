@@ -1,6 +1,9 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResend() {
+  if (!process.env.RESEND_API_KEY) return null
+  return new Resend(process.env.RESEND_API_KEY)
+}
 
 export async function sendBookingConfirmation(opts: {
   to: string
@@ -12,7 +15,7 @@ export async function sendBookingConfirmation(opts: {
   bookingId: string
 }) {
   const { to, customerName, boatName, startTime, endTime, totalPrice, bookingId } = opts
-  return resend.emails.send({
+  const r = getResend(); if (!r) return null; return r.emails.send({
     from: 'Keel Marina <bookings@keel.app>',
     to,
     subject: `Booking confirmed — ${boatName}`,
@@ -42,7 +45,7 @@ export async function sendBookingReminder(opts: {
   bookingId: string
 }) {
   const { to, customerName, boatName, startTime, bookingId } = opts
-  return resend.emails.send({
+  const r = getResend(); if (!r) return null; return r.emails.send({
     from: 'Keel Marina <bookings@keel.app>',
     to,
     subject: `Reminder: your rental tomorrow — ${boatName}`,
@@ -65,7 +68,7 @@ export async function sendBookingCancellation(opts: {
   bookingId: string
 }) {
   const { to, customerName, boatName, bookingId } = opts
-  return resend.emails.send({
+  const r = getResend(); if (!r) return null; return r.emails.send({
     from: 'Keel Marina <bookings@keel.app>',
     to,
     subject: `Booking canceled — ${boatName}`,
