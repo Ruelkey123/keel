@@ -79,6 +79,12 @@ export interface MaintenanceLog {
   description: string
   resolved_at: string | null
   created_at: string
+  status: 'scheduled' | 'in_progress' | 'completed'
+  estimated_cost: number | null
+  actual_cost: number | null
+  estimated_hours: number | null
+  actual_hours: number | null
+  vendor: string | null
 }
 
 export interface Customer {

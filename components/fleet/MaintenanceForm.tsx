@@ -33,13 +33,27 @@ const MAINTENANCE_TYPES: { value: MaintenanceType; label: string }[] = [
   { value: 'inspection', label: 'Inspection' },
 ]
 
+const MAINTENANCE_STATUSES: { value: 'scheduled' | 'in_progress' | 'completed'; label: string }[] = [
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+]
+
 export function MaintenanceForm({ boatId, onCreated, trigger }: MaintenanceFormProps) {
   const [open, setOpen] = useState(false)
   const [type, setType] = useState<MaintenanceType>('routine')
+  const [status, setStatus] = useState<'scheduled' | 'in_progress' | 'completed'>('scheduled')
   const [description, setDescription] = useState('')
   const [resolvedAt, setResolvedAt] = useState('')
+  const [vendor, setVendor] = useState('')
+  const [estimatedCost, setEstimatedCost] = useState('')
+  const [actualCost, setActualCost] = useState('')
+  const [estimatedHours, setEstimatedHours] = useState('')
+  const [actualHours, setActualHours] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const showActuals = status === 'in_progress' || status === 'completed'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -53,8 +67,14 @@ export function MaintenanceForm({ boatId, onCreated, trigger }: MaintenanceFormP
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type,
+          status,
           description: description.trim(),
           resolved_at: resolvedAt || undefined,
+          vendor: vendor.trim() || undefined,
+          estimated_cost: estimatedCost ? Math.round(parseFloat(estimatedCost) * 100) : undefined,
+          actual_cost: showActuals && actualCost ? Math.round(parseFloat(actualCost) * 100) : undefined,
+          estimated_hours: estimatedHours ? parseFloat(estimatedHours) : undefined,
+          actual_hours: showActuals && actualHours ? parseFloat(actualHours) : undefined,
         }),
       })
 
@@ -67,8 +87,14 @@ export function MaintenanceForm({ boatId, onCreated, trigger }: MaintenanceFormP
       onCreated(log)
       setOpen(false)
       setType('routine')
+      setStatus('scheduled')
       setDescription('')
       setResolvedAt('')
+      setVendor('')
+      setEstimatedCost('')
+      setActualCost('')
+      setEstimatedHours('')
+      setActualHours('')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to log maintenance')
     } finally {
@@ -79,25 +105,43 @@ export function MaintenanceForm({ boatId, onCreated, trigger }: MaintenanceFormP
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={trigger ?? <Button size="sm">Log Maintenance</Button>} />
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Log Maintenance</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="maint-type">Type</Label>
-            <Select value={type} onValueChange={(v) => setType((v ?? 'routine') as MaintenanceType)}>
-              <SelectTrigger id="maint-type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MAINTENANCE_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="maint-type">Type</Label>
+              <Select value={type} onValueChange={(v) => setType((v ?? 'routine') as MaintenanceType)}>
+                <SelectTrigger id="maint-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MAINTENANCE_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="maint-status">Status</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+                <SelectTrigger id="maint-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MAINTENANCE_STATUSES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -110,6 +154,77 @@ export function MaintenanceForm({ boatId, onCreated, trigger }: MaintenanceFormP
               rows={3}
               required
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="maint-vendor">Vendor / Mechanic (optional)</Label>
+            <Input
+              id="maint-vendor"
+              type="text"
+              value={vendor}
+              onChange={(e) => setVendor(e.target.value)}
+              placeholder="e.g. Harbor Marine Services"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="maint-est-cost">Estimated Cost ($)</Label>
+              <Input
+                id="maint-est-cost"
+                type="number"
+                min="0"
+                step="0.01"
+                value={estimatedCost}
+                onChange={(e) => setEstimatedCost(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+
+            {showActuals && (
+              <div className="space-y-1.5">
+                <Label htmlFor="maint-actual-cost">Actual Cost ($)</Label>
+                <Input
+                  id="maint-actual-cost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={actualCost}
+                  onChange={(e) => setActualCost(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="maint-est-hours">Estimated Hours</Label>
+              <Input
+                id="maint-est-hours"
+                type="number"
+                min="0"
+                step="0.5"
+                value={estimatedHours}
+                onChange={(e) => setEstimatedHours(e.target.value)}
+                placeholder="0"
+              />
+            </div>
+
+            {showActuals && (
+              <div className="space-y-1.5">
+                <Label htmlFor="maint-actual-hours">Actual Hours</Label>
+                <Input
+                  id="maint-actual-hours"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={actualHours}
+                  onChange={(e) => setActualHours(e.target.value)}
+                  placeholder="0"
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">

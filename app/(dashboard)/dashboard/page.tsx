@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Header } from '@/components/layout/Header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { CalendarDays, Ship, DollarSign, Activity } from 'lucide-react'
+import { CalendarDays, Ship, DollarSign, Activity, Wrench } from 'lucide-react'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { formatCurrency, formatDateRange } from '@/lib/utils'
 
@@ -72,6 +72,29 @@ async function getDashboardData(orgId: string) {
     .filter((p: { booking_id: string }) => orgBookingIds.has(p.booking_id))
     .reduce((sum: number, p: { amount: number }) => sum + p.amount, 0)
 
+  // Maintenance cost this calendar month
+  const { data: allBoats } = await supabase
+    .from('boats')
+    .select('id')
+    .eq('org_id', orgId)
+
+  const allBoatIds = (allBoats ?? []).map((b: { id: string }) => b.id)
+
+  const maintenanceCostThisMonth = await (async () => {
+    if (allBoatIds.length === 0) return 0
+    const { data: maintenanceLogs } = await supabase
+      .from('maintenance_logs')
+      .select('actual_cost, estimated_cost, created_at')
+      .in('boat_id', allBoatIds)
+      .gte(
+        'created_at',
+        `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01T00:00:00`
+      )
+    return (maintenanceLogs ?? []).reduce((sum: number, log: { actual_cost: number | null; estimated_cost: number | null }) => {
+      return sum + (log.actual_cost ?? log.estimated_cost ?? 0)
+    }, 0)
+  })()
+
   // Upcoming reservations (next 7 days, confirmed)
   const { data: upcomingBookings } = await supabase
     .from('bookings')
@@ -90,6 +113,7 @@ async function getDashboardData(orgId: string) {
     fleetRentedCount: (fleetRented ?? []).length,
     fleetMaintenanceCount: (fleetMaintenance ?? []).length,
     monthRevenue,
+    maintenanceCostThisMonth,
     upcomingBookings: upcomingBookings ?? [],
   }
 }
@@ -158,6 +182,12 @@ export default async function DashboardPage() {
       icon: DollarSign,
       description: 'Confirmed + completed payments',
     },
+    {
+      title: 'Maintenance Cost',
+      value: formatCurrency(data.maintenanceCostThisMonth),
+      icon: Wrench,
+      description: 'This month across fleet',
+    },
   ]
 
   const fleetStatus = [
@@ -173,7 +203,7 @@ export default async function DashboardPage() {
 
       <div className="flex-1 p-6 space-y-6">
         {/* KPI Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {kpiCards.map(({ title, value, icon: Icon, description }) => (
             <Card key={title} className="border border-slate-200 shadow-sm bg-white">
               <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-5">

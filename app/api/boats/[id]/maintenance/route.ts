@@ -79,10 +79,26 @@ export async function POST(
     if (!boat) return NextResponse.json({ error: 'Boat not found' }, { status: 404 })
 
     const body = await req.json()
-    const { type, description, resolved_at } = body as {
+    const {
+      type,
+      description,
+      resolved_at,
+      status,
+      vendor,
+      estimated_cost,
+      actual_cost,
+      estimated_hours,
+      actual_hours,
+    } = body as {
       type: MaintenanceType
       description: string
       resolved_at?: string
+      status?: string
+      vendor?: string
+      estimated_cost?: number
+      actual_cost?: number
+      estimated_hours?: number
+      actual_hours?: number
     }
 
     if (!type || !description) {
@@ -97,6 +113,12 @@ export async function POST(
         type,
         description,
         resolved_at: resolved_at ?? null,
+        status: status ?? 'scheduled',
+        vendor: vendor ?? null,
+        estimated_cost: estimated_cost ?? null,
+        actual_cost: actual_cost ?? null,
+        estimated_hours: estimated_hours ?? null,
+        actual_hours: actual_hours ?? null,
       })
       .select()
       .single()

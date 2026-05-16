@@ -14,7 +14,7 @@ import { BoatStatusBadge } from '@/components/fleet/BoatStatusBadge'
 import { PhotoUploader } from '@/components/fleet/PhotoUploader'
 import { MaintenanceForm } from '@/components/fleet/MaintenanceForm'
 import { IncidentForm } from '@/components/fleet/IncidentForm'
-import { formatRelative } from '@/lib/utils'
+import { formatRelative, formatCurrency } from '@/lib/utils'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Badge } from '@/components/ui/badge'
 import type {
@@ -144,6 +144,18 @@ const DEFAULT_MAINTENANCE_ICONS: Record<MaintenanceType, React.ElementType> = {
   inspection: Search,
 }
 
+const STATUS_BADGE_STYLES: Record<'scheduled' | 'in_progress' | 'completed', string> = {
+  scheduled: 'bg-slate-100 text-slate-700 hover:bg-slate-100 border-0',
+  in_progress: 'bg-amber-100 text-amber-700 hover:bg-amber-100 border-0',
+  completed: 'bg-green-100 text-green-700 hover:bg-green-100 border-0',
+}
+
+const STATUS_LABELS: Record<'scheduled' | 'in_progress' | 'completed', string> = {
+  scheduled: 'Scheduled',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+}
+
 export function BoatMaintenanceClient({
   boatId,
   initialLogs,
@@ -159,9 +171,19 @@ export function BoatMaintenanceClient({
     setLogs((prev) => [log, ...prev])
   }
 
+  const totalCost = logs.reduce((sum, log) => {
+    return sum + (log.actual_cost ?? log.estimated_cost ?? 0)
+  }, 0)
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-700">
+            Total maintenance cost:{' '}
+            <span className="font-bold text-slate-900">{formatCurrency(totalCost)}</span>
+          </p>
+        </div>
         <MaintenanceForm boatId={boatId} onCreated={handleCreated} />
       </div>
 
@@ -175,16 +197,24 @@ export function BoatMaintenanceClient({
         <ol className="relative border-l border-slate-200 pl-6 space-y-5">
           {logs.map((log) => {
             const Icon = maintenanceIcons[log.type] ?? Wrench
+            const logStatus = (log.status ?? 'scheduled') as 'scheduled' | 'in_progress' | 'completed'
+            const displayCost = log.actual_cost ?? log.estimated_cost
+            const costLabel = log.actual_cost != null ? 'Actual' : 'Est.'
+            const displayHours = log.actual_hours ?? log.estimated_hours
+            const hoursLabel = log.actual_hours != null ? 'actual hrs' : 'est. hrs'
             return (
               <li key={log.id} className="relative">
                 <span className="absolute -left-[1.85rem] flex h-7 w-7 items-center justify-center rounded-full bg-white border border-slate-200 shadow-sm">
                   <Icon className="h-3.5 w-3.5 text-slate-500" />
                 </span>
                 <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                       {log.type}
                     </span>
+                    <Badge className={`text-xs ${STATUS_BADGE_STYLES[logStatus]}`}>
+                      {STATUS_LABELS[logStatus]}
+                    </Badge>
                     <span className="text-xs text-slate-400">
                       {formatRelative(log.created_at)}
                     </span>
@@ -195,6 +225,26 @@ export function BoatMaintenanceClient({
                     )}
                   </div>
                   <p className="text-sm text-slate-700">{log.description}</p>
+                  {(log.vendor || displayCost != null || displayHours != null) && (
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                      {log.vendor && (
+                        <span className="text-xs text-slate-500">
+                          <span className="font-medium">Vendor:</span> {log.vendor}
+                        </span>
+                      )}
+                      {displayCost != null && (
+                        <span className="text-xs text-slate-500">
+                          <span className="font-medium">{costLabel} cost:</span>{' '}
+                          {formatCurrency(displayCost)}
+                        </span>
+                      )}
+                      {displayHours != null && (
+                        <span className="text-xs text-slate-500">
+                          {displayHours} {hoursLabel}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </li>
             )
