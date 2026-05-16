@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Header } from '@/components/layout/Header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -150,7 +149,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) redirect('/login')
+  if (!user) return null
 
   const { data: profile } = await supabase
     .from('users')
@@ -158,7 +157,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
     .eq('id', user.id)
     .single()
 
-  if (!profile) redirect('/login')
+  if (!profile) return null
 
   const data = await fetchAnalytics(range, profile.org_id)
 

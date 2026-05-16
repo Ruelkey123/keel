@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { Ship, Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -26,7 +25,7 @@ export default async function FleetPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) redirect('/login')
+  if (!user) return null
 
   const { data: profile } = await supabase
     .from('users')
@@ -34,7 +33,7 @@ export default async function FleetPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile) redirect('/login')
+  if (!profile) return null
 
   const boats = await getBoats(profile.org_id)
 

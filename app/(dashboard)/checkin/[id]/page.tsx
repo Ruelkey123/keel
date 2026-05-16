@@ -28,7 +28,7 @@ export default async function CheckinDetailPage({ params }: PageProps) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) redirect('/login')
+  if (!user) return null
 
   const { data: profile } = await supabase
     .from('users')
@@ -36,7 +36,7 @@ export default async function CheckinDetailPage({ params }: PageProps) {
     .eq('id', user.id)
     .single()
 
-  if (!profile) redirect('/login')
+  if (!profile) return null
 
   const booking = await getBookingForCheckin(id, profile.org_id)
   if (!booking) notFound()
