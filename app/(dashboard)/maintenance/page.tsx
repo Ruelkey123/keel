@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { formatCurrency, formatRelative } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { FleetHealthGrid } from '@/components/maintenance/FleetHealthGrid'
+import { MaintenanceCharts } from '@/components/maintenance/MaintenanceCharts'
 import type { MaintenanceLog, MaintenanceType, Boat } from '@/types/database'
 
 type MaintenanceStatus = 'scheduled' | 'in_progress' | 'completed'
@@ -129,6 +131,83 @@ export default async function MaintenancePage({ searchParams }: PageProps) {
 
   const boatsInMaintenance = (boats ?? []).filter((b) => b.status === 'maintenance').length
 
+  // Fleet health grid data
+  const boatHealth = (boats ?? []).map((boat) => {
+    const boatLogs = allLogs.filter((l) => l.boat_id === boat.id)
+    const sorted = [...boatLogs].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+    const lastServiceDate = sorted[0]?.created_at ?? null
+    const openJobsCount = boatLogs.filter((l) =>
+      ['scheduled', 'in_progress'].includes(l.status)
+    ).length
+    const totalCost = boatLogs.reduce(
+      (s, l) => s + (l.actual_cost ?? l.estimated_cost ?? 0),
+      0
+    )
+    return {
+      id: boat.id,
+      name: boat.name,
+      status: boat.status,
+      lastServiceDate,
+      openJobs: openJobsCount,
+      totalCost,
+    }
+  })
+
+  // Status pie data
+  const statusData = [
+    {
+      name: 'Scheduled',
+      value: allLogs.filter((l) => l.status === 'scheduled').length,
+      color: '#94a3b8',
+    },
+    {
+      name: 'In Progress',
+      value: allLogs.filter((l) => l.status === 'in_progress').length,
+      color: '#f59e0b',
+    },
+    {
+      name: 'Completed',
+      value: allLogs.filter((l) => l.status === 'completed').length,
+      color: '#10b981',
+    },
+  ]
+
+  // Cost by type
+  const costByType = (['routine', 'repair', 'inspection'] as const).map((type) => ({
+    name: type.charAt(0).toUpperCase() + type.slice(1),
+    value: Math.round(
+      allLogs
+        .filter((l) => l.type === type)
+        .reduce((s, l) => s + (l.actual_cost ?? l.estimated_cost ?? 0), 0) / 100
+    ),
+    color: type === 'routine' ? '#38bdf8' : type === 'repair' ? '#f87171' : '#a78bfa',
+  }))
+
+  // Monthly spend (last 6 months)
+  const monthlySpend = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date()
+    d.setMonth(d.getMonth() - (5 - i))
+    const year = d.getFullYear()
+    const month = d.getMonth()
+    const monthLogs = allLogs.filter((l) => {
+      const ld = new Date(l.created_at)
+      return ld.getFullYear() === year && ld.getMonth() === month
+    })
+    return {
+      month: d.toLocaleString('default', { month: 'short' }),
+      cost: Math.round(
+        monthLogs.reduce((s, l) => s + (l.actual_cost ?? l.estimated_cost ?? 0), 0) / 100
+      ),
+    }
+  })
+
+  // Cost by boat
+  const costByBoat = boatHealth
+    .map((b) => ({ name: b.name, cost: Math.round(b.totalCost / 100) }))
+    .sort((a, b) => b.cost - a.cost)
+
   const statCards = [
     { label: 'Open Jobs', value: openJobs, color: 'text-amber-700' },
     { label: 'Completed This Month', value: completedThisMonth, color: 'text-green-700' },
@@ -161,6 +240,28 @@ export default async function MaintenancePage({ searchParams }: PageProps) {
             </div>
           ))}
         </div>
+
+        {/* Fleet Health */}
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">
+          Fleet Health
+        </h2>
+        <FleetHealthGrid boats={boatHealth} />
+
+        {/* Analytics */}
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">
+          Analytics
+        </h2>
+        <MaintenanceCharts
+          statusData={statusData}
+          costByType={costByType}
+          monthlySpend={monthlySpend}
+          costByBoat={costByBoat}
+        />
+
+        {/* Log History */}
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">
+          Log History
+        </h2>
 
         {/* Filter tabs */}
         <div className="flex gap-1 border-b border-slate-200">
