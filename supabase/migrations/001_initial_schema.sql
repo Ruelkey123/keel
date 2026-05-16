@@ -3,7 +3,7 @@ create extension if not exists "uuid-ossp";
 
 -- Organizations
 create table public.organizations (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   name text not null,
   slug text not null unique,
   logo_url text,
@@ -24,7 +24,7 @@ create table public.users (
 
 -- Boats
 create table public.boats (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   org_id uuid not null references public.organizations(id) on delete cascade,
   name text not null,
   make text,
@@ -44,7 +44,7 @@ create table public.boats (
 
 -- Boat photos
 create table public.boat_photos (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   boat_id uuid not null references public.boats(id) on delete cascade,
   url text not null,
   caption text,
@@ -53,7 +53,7 @@ create table public.boat_photos (
 
 -- Incidents
 create table public.incidents (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   boat_id uuid not null references public.boats(id) on delete cascade,
   org_id uuid not null references public.organizations(id) on delete cascade,
   reported_by uuid not null references public.users(id),
@@ -67,7 +67,7 @@ create table public.incidents (
 
 -- Maintenance logs
 create table public.maintenance_logs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   boat_id uuid not null references public.boats(id) on delete cascade,
   logged_by uuid not null references public.users(id),
   type text not null check (type in ('routine', 'repair', 'inspection')),
@@ -78,7 +78,7 @@ create table public.maintenance_logs (
 
 -- Customers
 create table public.customers (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   org_id uuid not null references public.organizations(id) on delete cascade,
   full_name text not null,
   email text not null,
@@ -90,7 +90,7 @@ create table public.customers (
 
 -- Waivers (templates)
 create table public.waivers (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   org_id uuid not null references public.organizations(id) on delete cascade,
   name text not null,
   content_url text,
@@ -100,7 +100,7 @@ create table public.waivers (
 
 -- Bookings
 create table public.bookings (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   org_id uuid not null references public.organizations(id) on delete cascade,
   boat_id uuid not null references public.boats(id),
   customer_id uuid not null references public.customers(id),
@@ -121,7 +121,7 @@ create table public.bookings (
 
 -- Availability blocks
 create table public.availability_blocks (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   org_id uuid not null references public.organizations(id) on delete cascade,
   boat_id uuid not null references public.boats(id) on delete cascade,
   reason text,
@@ -134,7 +134,7 @@ create table public.availability_blocks (
 
 -- Payments
 create table public.payments (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   booking_id uuid not null references public.bookings(id) on delete cascade,
   stripe_payment_intent_id text,
   type text not null check (type in ('deposit', 'rental', 'refund')),
@@ -145,7 +145,7 @@ create table public.payments (
 
 -- Check-ins / Check-outs
 create table public.checkins (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   booking_id uuid not null unique references public.bookings(id) on delete cascade,
   checked_in_by uuid references public.users(id),
   checked_out_by uuid references public.users(id),
@@ -162,7 +162,7 @@ create table public.checkins (
 
 -- Check-in photos
 create table public.checkin_photos (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   checkin_id uuid not null references public.checkins(id) on delete cascade,
   phase text not null check (phase in ('in', 'out')),
   url text not null,
@@ -171,7 +171,7 @@ create table public.checkin_photos (
 
 -- Signed waivers
 create table public.signed_waivers (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   booking_id uuid not null references public.bookings(id) on delete cascade,
   customer_id uuid not null references public.customers(id),
   waiver_id uuid not null references public.waivers(id),
@@ -183,7 +183,7 @@ create table public.signed_waivers (
 
 -- Notifications
 create table public.notifications (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   org_id uuid not null references public.organizations(id) on delete cascade,
   booking_id uuid references public.bookings(id) on delete set null,
   type text not null check (type in ('confirmation', 'reminder', 'cancellation')),
@@ -195,7 +195,7 @@ create table public.notifications (
 
 -- AI outputs
 create table public.ai_outputs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   org_id uuid not null references public.organizations(id) on delete cascade,
   source_type text not null check (source_type in ('booking', 'checkin', 'incident', 'maintenance')),
   source_id uuid not null,
