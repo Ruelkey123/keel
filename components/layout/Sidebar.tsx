@@ -11,6 +11,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  Wrench,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ import { cn } from '@/lib/utils'
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/fleet', label: 'Fleet', icon: Ship },
+  { href: '/maintenance', label: 'Maintenance', icon: Wrench },
   { href: '/bookings', label: 'Bookings', icon: CalendarDays },
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/checkin', label: 'Check-in', icon: ClipboardCheck },
